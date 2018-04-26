@@ -3,6 +3,11 @@ import scipy.sparse as sp
 import torch
 
 
+def annealing(optimizer, decay_rate=5):
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = param_group['lr'] / decay_rate
+
+
 def encode_onehot(labels):
     classes = set(labels)
     classes_dict = {c: np.identity(len(classes))[i, :] for i, c in enumerate(classes)}
@@ -39,6 +44,9 @@ def load_data(path="./data/cora/", dataset="cora"):
     features = torch.FloatTensor(np.array(features.todense()))
     labels = torch.LongTensor(np.where(labels)[1])
 
+    # print(adj.shape)
+    # print(features.shape)
+    # print(labels.shape)
     idx_train = torch.LongTensor(idx_train)
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
