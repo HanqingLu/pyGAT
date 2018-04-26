@@ -16,7 +16,8 @@ class GraphGatedAttentionLayer(nn.Module):
         self.out_features = out_features
         self.alpha = alpha
         self.concat = concat
-        self.act = nn.Sigmoid()
+        self.act = nn.ELU()
+        self.bnlayer = nn.BatchNorm1d(out_features)
         self.W = nn.Parameter(nn.init.xavier_uniform_(torch.Tensor(in_features, out_features).type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor), gain=np.sqrt(2.0)), requires_grad=True)
         self.a1 = nn.Parameter(nn.init.xavier_uniform_(torch.Tensor(out_features, out_features).type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor), gain=np.sqrt(2.0)), requires_grad=True)
         self.a2 = nn.Parameter(nn.init.xavier_uniform_(torch.Tensor(out_features, out_features).type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor), gain=np.sqrt(2.0)), requires_grad=True)
@@ -30,8 +31,8 @@ class GraphGatedAttentionLayer(nn.Module):
         h = torch.mm(input, self.W)  # 2708, 8
         N = h.size()[0]
 
-        h1 = torch.mm(h, self.a1)  # 2708, 8
-        h2 = torch.mm(h, self.a2)  # 2708, 8
+        h1 = self.bnlayer(torch.mm(h, self.a1))  # 2708, 8
+        h2 = self.bnlayer(torch.mm(h, self.a2))  # 2708, 8
 
         e_input = (h1.repeat(1, N).view(N * N, -1) + h2.repeat(N, 1)).view(N, -1, self.out_features)
         # generate all combinations for h1_i and h2_j
