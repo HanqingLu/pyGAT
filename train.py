@@ -115,6 +115,8 @@ if __name__ == '__main__':
             best = loss_values[-1]
             best_epoch = epoch
             bad_counter = 0
+            if epoch > 250:
+                compute_test()
         else:
             bad_counter += 1
 
