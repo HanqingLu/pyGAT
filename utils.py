@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
 import torch
+from sklearn.metrics import f1_score
 
 
 def annealing(optimizer, decay_rate=5):
@@ -84,7 +85,8 @@ def normalize_features(mx):
 
 def accuracy(output, labels):
     preds = output.max(1)[1].type_as(labels)
+    f1 = f1_score(preds.cpu().data.numpy(), labels.cpu().data.numpy(), average='macro')
     correct = preds.eq(labels).double()
     correct = correct.sum()
-    return correct / len(labels)
+    return correct / len(labels), f1
 
