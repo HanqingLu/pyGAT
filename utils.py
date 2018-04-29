@@ -35,18 +35,27 @@ def load_data(path="./data/cora/", dataset="cora"):
 
     features = normalize_features(features)
     adj = normalize_adj(adj + sp.eye(adj.shape[0]))
+    # adj = adj.tocoo()
 
     idx_train = range(140)
     idx_val = range(200, 500)
     idx_test = range(500, 1500)
 
     adj = torch.FloatTensor(np.array(adj.todense()))
+    # idx_list = []
+    # value_list = []
+    # for k in range(len(adj.row)):
+    #     i, j = adj.row[k], adj.col[k]
+    #     idx_list.append([i, j])
+    #     value_list.append(adj.data[k])
+    #
+    # i = torch.from_numpy(np.array(idx_list)).long().t()
+    # v = torch.from_numpy(np.array(value_list)).float()
+
+    # adj = torch.sparse.FloatTensor(i, v, torch.Size([2708, 2708]))
     features = torch.FloatTensor(np.array(features.todense()))
     labels = torch.LongTensor(np.where(labels)[1])
 
-    # print(adj.shape)
-    # print(features.shape)
-    # print(labels.shape)
     idx_train = torch.LongTensor(idx_train)
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)

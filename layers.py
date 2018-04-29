@@ -4,6 +4,55 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class SparseGraphGatedAttentionLayer(nn.Module):
+    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+        super(SparseGraphGatedAttentionLayer, self).__init__()
+        self.dropout = dropout
+        self.in_features = in_features
+        self.out_features = out_features
+        self.alpha = alpha
+        self.concat = concat
+        self.act = nn.Sigmoid()
+        self.bnlayer = nn.BatchNorm1d(out_features)
+        self.W = nn.Parameter(nn.init.xavier_uniform_(torch.Tensor(in_features, out_features).type(
+            torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor), gain=np.sqrt(2.0)),
+                              requires_grad=True)
+        self.a1 = nn.Parameter(nn.init.xavier_uniform_(torch.Tensor(out_features, out_features).type(
+            torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor), gain=np.sqrt(2.0)),
+                               requires_grad=True)
+        self.a2 = nn.Parameter(nn.init.xavier_uniform_(torch.Tensor(out_features, out_features).type(
+            torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor), gain=np.sqrt(2.0)),
+                               requires_grad=True)
+
+    def forward(self, input, adj):
+        '''
+        :param input: 2708, 1433
+        :param adj: 2708, 2708
+        :return:
+        '''
+        h = torch.mm(input, self.W)  # 2708, 8
+        N = h.size()[0]
+        idx = adj._indices()
+        val = adj._values()
+        M = val.size(0)
+
+        h1 = torch.mm(h, self.a1)  # 2708, 8
+        h2 = torch.mm(h, self.a2)  # 2708, 8
+
+        h_prime = torch.zeros(N, self.out_features).cuda()
+        for k in range(M):
+            h_ij = self.act(h1[idx[0, k], :] + h2[idx[1, k], :]) * h[idx[1, k], :]
+            h_prime[idx[0, k], :] += val[k] * h_ij
+
+        if self.concat:
+            return F.elu(h_prime)
+        else:
+            return h_prime
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
+
+
 class GraphGatedAttentionLayer(nn.Module):
     """
     Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
@@ -47,6 +96,7 @@ class GraphGatedAttentionLayer(nn.Module):
         # generate all combinations for h1_i and h2_j
 
         e = self.act(e_input)  # 2708, 2708, 8
+
         # print(e)
         logits = e * h.unsqueeze(dim=0).repeat(N, 1, 1)  # 2708, 2708, 8
 

@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from layers import GraphAttentionLayer, GraphGatedAttentionLayer
+from layers import GraphAttentionLayer, GraphGatedAttentionLayer, SparseGraphGatedAttentionLayer
 
 
 class GAT(nn.Module):
@@ -10,6 +10,7 @@ class GAT(nn.Module):
         self.dropout = dropout
 
         self.attentions = [GraphGatedAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
+
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
 
